@@ -1,5 +1,16 @@
 # @shopify/cli-hydrogen
 
+## 4.0.6
+
+### Patch Changes
+
+- Corrects links referred to in Onboarding Route. ([#509](https://github.com/Shopify/hydrogen/pull/509)) by [@benjaminsehl](https://github.com/benjaminsehl)
+
+- Improve onboarding style and links ([#525](https://github.com/Shopify/hydrogen/pull/525)) by [@lordofthecactus](https://github.com/lordofthecactus)
+
+- Updated dependencies [[`ff9d729`](https://github.com/Shopify/hydrogen/commit/ff9d7297bf6cb814ac4593cb20402872ef7c30eb)]:
+  - @shopify/remix-oxygen@1.0.3
+
 ## 4.0.5
 
 ### Patch Changes
