@@ -1,6 +1,5 @@
 name: 🚀 CI
-on:
-  push:
+on: [pull_request]
 
 jobs:
   lint:
@@ -17,7 +16,7 @@ jobs:
       - name: ⎔ Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version-file: '.nvmrc'
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
 
@@ -26,6 +25,30 @@ jobs:
 
       - name: 🔬 Lint
         run: npm run lint
+
+  format:
+    name: ⬣ Prettier
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: ci-format-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v3
+
+      - name: ⎔ Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 🔬 Check Formatting
+        run: npm run format:check
 
   typecheck:
     name: Typescript
@@ -41,23 +64,25 @@ jobs:
       - name: ⎔ Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version-file: '.nvmrc'
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
 
       - name: 📥 Install dependencies
         run: npm ci
 
-      - name: 💾 Turbo cache
-        id: turbo-cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules/.cache/turbo
-            **/.turbo
-          key: turbo-${{ github.job }}-${{ github.ref_name }}-${{ github.sha }}
-          restore-keys: |
-            turbo-${{ github.job }}-${{ github.ref_name }}-
+      # Enabling the turbo cache causes deployments to fail intermittently.
+      # The build step fails with dependency issues. More investigation needed.
+      # - name: 💾 Turbo cache
+      #   id: turbo-cache
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: |
+      #       node_modules/.cache/turbo
+      #       **/.turbo
+      #     key: turbo-${{ github.job }}-${{ github.ref_name }}-${{ github.sha }}
+      #     restore-keys: |
+      #       turbo-${{ github.job }}-${{ github.ref_name }}-
 
       - name: 📦 Build packages
         run: npm run build
@@ -82,7 +107,7 @@ jobs:
       - name: ⎔ Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version-file: '.nvmrc'
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
 

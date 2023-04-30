@@ -1,5 +1,5 @@
 import {useLoaderData} from '@remix-run/react';
-import {type MetaFunction, LinksFunction} from '@shopify/remix-oxygen';
+import {LinksFunction} from '@shopify/remix-oxygen';
 import {type Shop} from '@shopify/hydrogen-react/storefront-api-types';
 import {HydrogenLogoBaseBW} from '../components/HydrogenLogoBaseBW.jsx';
 import {HydrogenLogoBaseColor} from '../components/HydrogenLogoBaseColor.jsx';
@@ -9,26 +9,33 @@ import {IconTwitter} from '../components/IconTwitter.jsx';
 import {IconBanner} from '../components/IconBanner.jsx';
 import {IconError} from '../components/IconError.jsx';
 import favicon from '../assets/favicon.svg';
+import interVariableFontWoff2 from '../assets/inter-variable-font.woff2';
+import jetbrainsmonoVariableFontWoff2 from '../assets/jetbrainsmono-variable-font.woff2';
 import type {I18nBase, StorefrontClient} from '@shopify/hydrogen';
 
 interface AppLoadContext {
   storefront: StorefrontClient<I18nBase>['storefront'];
 }
 
-export const meta: MetaFunction = () => {
-  return {
-    title: 'Hydrogen',
-    description: 'A custom storefront powered by Hydrogen',
-    charset: 'utf-8',
-    viewport: 'width=device-width,initial-scale=1',
-  };
-};
-
 export const links: LinksFunction = () => [
   {
     rel: 'icon',
     type: 'image/svg+xml',
     href: favicon,
+  },
+  {
+    rel: 'preload',
+    href: interVariableFontWoff2,
+    as: 'font',
+    type: 'font/ttf',
+    crossOrigin: 'anonymous',
+  },
+  {
+    rel: 'preload',
+    href: jetbrainsmonoVariableFontWoff2,
+    as: 'font',
+    type: 'font/ttf',
+    crossOrigin: 'anonymous',
   },
 ];
 
@@ -38,10 +45,6 @@ export async function loader({context}: {context: AppLoadContext}) {
 }
 
 export const HYDROGEN_SHOP_ID = 'gid://shopify/Shop/55145660472';
-
-export function CatchBoundary() {
-  return <ErrorPage />;
-}
 
 export function ErrorBoundary() {
   return <ErrorPage />;
@@ -72,7 +75,7 @@ export default function Index() {
               <br /> To get started, edit {` `}
               <code>.env</code>. Then, create your first route with the file
               {` `}
-              <code>/app/routes/index.jsx</code>. Learn more about
+              <code>/app/routes/_index.jsx</code>. Learn more about
               {` `}
               <a
                 target="_blank"
@@ -114,7 +117,7 @@ function ErrorPage() {
           </div>
           <p>
             Check your domain and API token in your <code>.env</code> file.
-            Learn more about
+            Learn more about{` `}
             <a
               target="_blank"
               rel="norefferer noopener"

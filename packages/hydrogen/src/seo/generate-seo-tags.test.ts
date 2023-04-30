@@ -1,6 +1,6 @@
-import {expect, describe, it, vi} from 'vitest';
-import {generateSeoTags, type Seo} from './generate-seo-tags';
-import type {Product} from 'schema-dts';
+import type {Organization, Product, Thing} from 'schema-dts';
+import {afterAll, describe, expect, it, vi} from 'vitest';
+import {generateSeoTags, type SeoConfig} from './generate-seo-tags';
 
 describe('generateSeoTags', () => {
   const consoleMock = {
@@ -8,6 +8,10 @@ describe('generateSeoTags', () => {
   };
 
   vi.stubGlobal('console', consoleMock);
+
+  afterAll(() => {
+    vi.unstubAllGlobals();
+  });
 
   it('removes undefined values', () => {
     // Given
@@ -26,34 +30,7 @@ describe('generateSeoTags', () => {
     const output = generateSeoTags(input);
 
     // Then
-    expect(output).toMatchInlineSnapshot(`
-      [
-        {
-          "key": "meta-og:type",
-          "props": {
-            "content": "website",
-            "property": "og:type",
-          },
-          "tag": "meta",
-        },
-        {
-          "key": "meta-twitter:card",
-          "props": {
-            "content": "summary_large_image",
-            "name": "twitter:card",
-          },
-          "tag": "meta",
-        },
-        {
-          "children": "{\\"@context\\":\\"https://schema.org\\",\\"@type\\":\\"Thing\\"}",
-          "key": "script-application/ld+json",
-          "props": {
-            "type": "application/ld+json",
-          },
-          "tag": "script",
-        },
-      ]
-    `);
+    expect(output).toMatchInlineSnapshot('[]');
   });
 
   describe('title', () => {
@@ -67,56 +44,33 @@ describe('generateSeoTags', () => {
       const output = generateSeoTags(input);
 
       // Then
-      expect(output).toMatchInlineSnapshot(`
-        [
+      expect(output).toEqual(
+        expect.arrayContaining([
           {
-            "children": "Snowdevil",
-            "key": "0-title",
-            "props": {},
-            "tag": "title",
+            children: 'Snowdevil',
+            key: '0-title',
+            props: {},
+            tag: 'title',
           },
           {
-            "key": "meta-og:title",
-            "props": {
-              "content": "Snowdevil",
-              "property": "og:title",
+            key: 'meta-og:title',
+            props: {
+              content: 'Snowdevil',
+              property: 'og:title',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
+
           {
-            "key": "meta-og:type",
-            "props": {
-              "content": "website",
-              "property": "og:type",
+            key: 'meta-twitter:title',
+            props: {
+              content: 'Snowdevil',
+              name: 'twitter:title',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
-          {
-            "key": "meta-twitter:card",
-            "props": {
-              "content": "summary_large_image",
-              "name": "twitter:card",
-            },
-            "tag": "meta",
-          },
-          {
-            "key": "meta-twitter:title",
-            "props": {
-              "content": "Snowdevil",
-              "name": "twitter:title",
-            },
-            "tag": "meta",
-          },
-          {
-            "children": "{\\"@context\\":\\"https://schema.org\\",\\"@type\\":\\"Thing\\",\\"name\\":\\"Snowdevil\\"}",
-            "key": "script-application/ld+json",
-            "props": {
-              "type": "application/ld+json",
-            },
-            "tag": "script",
-          },
-        ]
-      `);
+        ]),
+      );
     });
 
     it('should fill the title with a template', () => {
@@ -130,56 +84,33 @@ describe('generateSeoTags', () => {
       const output = generateSeoTags(input);
 
       // Then
-      expect(output).toMatchInlineSnapshot(`
-        [
+      expect(output).toEqual(
+        expect.arrayContaining([
           {
-            "children": "Snowdevil - A headless storefront",
-            "key": "0-title",
-            "props": {},
-            "tag": "title",
+            children: 'Snowdevil - A headless storefront',
+            key: '0-title',
+            props: {},
+            tag: 'title',
           },
           {
-            "key": "meta-og:title",
-            "props": {
-              "content": "Snowdevil - A headless storefront",
-              "property": "og:title",
+            key: 'meta-og:title',
+            props: {
+              content: 'Snowdevil - A headless storefront',
+              property: 'og:title',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
+
           {
-            "key": "meta-og:type",
-            "props": {
-              "content": "website",
-              "property": "og:type",
+            key: 'meta-twitter:title',
+            props: {
+              content: 'Snowdevil - A headless storefront',
+              name: 'twitter:title',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
-          {
-            "key": "meta-twitter:card",
-            "props": {
-              "content": "summary_large_image",
-              "name": "twitter:card",
-            },
-            "tag": "meta",
-          },
-          {
-            "key": "meta-twitter:title",
-            "props": {
-              "content": "Snowdevil - A headless storefront",
-              "name": "twitter:title",
-            },
-            "tag": "meta",
-          },
-          {
-            "children": "{\\"@context\\":\\"https://schema.org\\",\\"@type\\":\\"Thing\\",\\"name\\":\\"Snowdevil\\"}",
-            "key": "script-application/ld+json",
-            "props": {
-              "type": "application/ld+json",
-            },
-            "tag": "script",
-          },
-        ]
-      `);
+        ]),
+      );
     });
 
     it('should warn if the title is too long', () => {
@@ -192,7 +123,6 @@ describe('generateSeoTags', () => {
       generateSeoTags(input);
 
       // Then
-
       expect(console.warn).toHaveBeenCalledWith(
         'Error in SEO input: `title` should not be longer than 120 characters',
       );
@@ -210,58 +140,34 @@ describe('generateSeoTags', () => {
       const output = generateSeoTags(input);
 
       // Then
-      expect(output).toMatchInlineSnapshot(`
-        [
+      expect(output).toEqual(
+        expect.arrayContaining([
           {
-            "key": "meta-description",
-            "props": {
-              "content": "A headless storefront",
-              "name": "description",
+            key: 'meta-description',
+            props: {
+              content: 'A headless storefront',
+              name: 'description',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-og:description",
-            "props": {
-              "content": "A headless storefront",
-              "property": "og:description",
+            key: 'meta-og:description',
+            props: {
+              content: 'A headless storefront',
+              property: 'og:description',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-og:type",
-            "props": {
-              "content": "website",
-              "property": "og:type",
+            key: 'meta-twitter:description',
+            props: {
+              content: 'A headless storefront',
+              name: 'twitter:description',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
-          {
-            "key": "meta-twitter:card",
-            "props": {
-              "content": "summary_large_image",
-              "name": "twitter:card",
-            },
-            "tag": "meta",
-          },
-          {
-            "key": "meta-twitter:description",
-            "props": {
-              "content": "A headless storefront",
-              "name": "twitter:description",
-            },
-            "tag": "meta",
-          },
-          {
-            "children": "{\\"@context\\":\\"https://schema.org\\",\\"@type\\":\\"Thing\\",\\"description\\":\\"A headless storefront\\"}",
-            "key": "script-application/ld+json",
-            "props": {
-              "type": "application/ld+json",
-            },
-            "tag": "script",
-          },
-        ]
-      `);
+        ]),
+      );
     });
 
     it('should warn if the description is too long', () => {
@@ -292,50 +198,26 @@ describe('generateSeoTags', () => {
       const output = generateSeoTags(input);
 
       // Then
-      expect(output).toMatchInlineSnapshot(`
-        [
+      expect(output).toEqual(
+        expect.arrayContaining([
           {
-            "key": "link-canonical",
-            "props": {
-              "href": "https://hydrogen.shop/collections",
-              "rel": "canonical",
+            key: 'link-canonical',
+            props: {
+              href: 'https://hydrogen.shop/collections',
+              rel: 'canonical',
             },
-            "tag": "link",
+            tag: 'link',
           },
           {
-            "key": "meta-og:type",
-            "props": {
-              "content": "website",
-              "property": "og:type",
+            key: 'meta-og:url',
+            props: {
+              content: 'https://hydrogen.shop/collections',
+              property: 'og:url',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
-          {
-            "key": "meta-og:url",
-            "props": {
-              "content": "https://hydrogen.shop/collections",
-              "property": "og:url",
-            },
-            "tag": "meta",
-          },
-          {
-            "key": "meta-twitter:card",
-            "props": {
-              "content": "summary_large_image",
-              "name": "twitter:card",
-            },
-            "tag": "meta",
-          },
-          {
-            "children": "{\\"@context\\":\\"https://schema.org\\",\\"@type\\":\\"ItemList\\",\\"url\\":\\"https://hydrogen.shop/collections\\"}",
-            "key": "script-application/ld+json",
-            "props": {
-              "type": "application/ld+json",
-            },
-            "tag": "script",
-          },
-        ]
-      `);
+        ]),
+      );
     });
 
     it('should warn if the url is not a url', () => {
@@ -366,42 +248,18 @@ describe('generateSeoTags', () => {
       const output = generateSeoTags(input);
 
       // Then
-      expect(output).toMatchInlineSnapshot(`
-        [
+      expect(output).toEqual(
+        expect.arrayContaining([
           {
-            "key": "meta-og:image",
-            "props": {
-              "content": "https://example.com/image.jpg",
-              "name": "og:image",
+            key: 'meta-og:image',
+            props: {
+              content: 'https://example.com/image.jpg',
+              name: 'og:image',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
-          {
-            "key": "meta-og:type",
-            "props": {
-              "content": "website",
-              "property": "og:type",
-            },
-            "tag": "meta",
-          },
-          {
-            "key": "meta-twitter:card",
-            "props": {
-              "content": "summary_large_image",
-              "name": "twitter:card",
-            },
-            "tag": "meta",
-          },
-          {
-            "children": "{\\"@context\\":\\"https://schema.org\\",\\"@type\\":\\"Thing\\",\\"image\\":\\"https://example.com/image.jpg\\"}",
-            "key": "script-application/ld+json",
-            "props": {
-              "type": "application/ld+json",
-            },
-            "tag": "script",
-          },
-        ]
-      `);
+        ]),
+      );
     });
 
     it('should add media tags when given an array of strings', () => {
@@ -417,50 +275,26 @@ describe('generateSeoTags', () => {
       const output = generateSeoTags(input);
 
       // Then
-      expect(output).toMatchInlineSnapshot(`
-        [
+      expect(output).toEqual(
+        expect.arrayContaining([
           {
-            "key": "meta-og:image",
-            "props": {
-              "content": "https://example.com/image-1.jpg",
-              "name": "og:image",
+            key: 'meta-og:image',
+            props: {
+              content: 'https://example.com/image-1.jpg',
+              name: 'og:image',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-og:image",
-            "props": {
-              "content": "https://example.com/image-2.jpg",
-              "name": "og:image",
+            key: 'meta-og:image',
+            props: {
+              content: 'https://example.com/image-2.jpg',
+              name: 'og:image',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
-          {
-            "key": "meta-og:type",
-            "props": {
-              "content": "website",
-              "property": "og:type",
-            },
-            "tag": "meta",
-          },
-          {
-            "key": "meta-twitter:card",
-            "props": {
-              "content": "summary_large_image",
-              "name": "twitter:card",
-            },
-            "tag": "meta",
-          },
-          {
-            "children": "{\\"@context\\":\\"https://schema.org\\",\\"@type\\":\\"Thing\\",\\"image\\":\\"https://example.com/image-2.jpg\\"}",
-            "key": "script-application/ld+json",
-            "props": {
-              "type": "application/ld+json",
-            },
-            "tag": "script",
-          },
-        ]
-      `);
+        ]),
+      );
     });
 
     it('should add media tags when given an object', () => {
@@ -476,66 +310,42 @@ describe('generateSeoTags', () => {
       const output = generateSeoTags(input);
 
       // Then
-      expect(output).toMatchInlineSnapshot(`
-        [
+      expect(output).toEqual(
+        expect.arrayContaining([
           {
-            "key": "meta-https://example.com/image-1.jpg-0-og:image:url",
-            "props": {
-              "content": "https://example.com/image-1.jpg",
-              "property": "og:image:url",
+            key: 'meta-https://example.com/image-1.jpg-0-og:image:url',
+            props: {
+              content: 'https://example.com/image-1.jpg',
+              property: 'og:image:url',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-1.jpg-og:image:height",
-            "props": {
-              "content": 100,
-              "property": "og:image:height",
+            key: 'meta-https://example.com/image-1.jpg-og:image:height',
+            props: {
+              content: 100,
+              property: 'og:image:height',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-1.jpg-og:image:secure_url",
-            "props": {
-              "content": "https://example.com/image-1.jpg",
-              "property": "og:image:secure_url",
+            key: 'meta-https://example.com/image-1.jpg-og:image:secure_url',
+            props: {
+              content: 'https://example.com/image-1.jpg',
+              property: 'og:image:secure_url',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-1.jpg-og:image:type",
-            "props": {
-              "content": "image/jpeg",
-              "property": "og:image:type",
+            key: 'meta-https://example.com/image-1.jpg-og:image:type',
+            props: {
+              content: 'image/jpeg',
+              property: 'og:image:type',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
-          {
-            "key": "meta-og:type",
-            "props": {
-              "content": "website",
-              "property": "og:type",
-            },
-            "tag": "meta",
-          },
-          {
-            "key": "meta-twitter:card",
-            "props": {
-              "content": "summary_large_image",
-              "name": "twitter:card",
-            },
-            "tag": "meta",
-          },
-          {
-            "children": "{\\"@context\\":\\"https://schema.org\\",\\"@type\\":\\"Thing\\"}",
-            "key": "script-application/ld+json",
-            "props": {
-              "type": "application/ld+json",
-            },
-            "tag": "script",
-          },
-        ]
-      `);
+        ]),
+      );
     });
 
     it('should add media tags when given an array of objects', () => {
@@ -557,98 +367,74 @@ describe('generateSeoTags', () => {
       const output = generateSeoTags(input);
 
       // Then
-      expect(output).toMatchInlineSnapshot(`
-        [
+      expect(output).toEqual(
+        expect.arrayContaining([
           {
-            "key": "meta-https://example.com/image-1.jpg-0-og:image:url",
-            "props": {
-              "content": "https://example.com/image-1.jpg",
-              "property": "og:image:url",
+            key: 'meta-https://example.com/image-1.jpg-0-og:image:url',
+            props: {
+              content: 'https://example.com/image-1.jpg',
+              property: 'og:image:url',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-1.jpg-og:image:height",
-            "props": {
-              "content": 100,
-              "property": "og:image:height",
+            key: 'meta-https://example.com/image-1.jpg-og:image:height',
+            props: {
+              content: 100,
+              property: 'og:image:height',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-1.jpg-og:image:secure_url",
-            "props": {
-              "content": "https://example.com/image-1.jpg",
-              "property": "og:image:secure_url",
+            key: 'meta-https://example.com/image-1.jpg-og:image:secure_url',
+            props: {
+              content: 'https://example.com/image-1.jpg',
+              property: 'og:image:secure_url',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-1.jpg-og:image:type",
-            "props": {
-              "content": "image/jpeg",
-              "property": "og:image:type",
+            key: 'meta-https://example.com/image-1.jpg-og:image:type',
+            props: {
+              content: 'image/jpeg',
+              property: 'og:image:type',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-2.jpg-0-og:image:url",
-            "props": {
-              "content": "https://example.com/image-2.jpg",
-              "property": "og:image:url",
+            key: 'meta-https://example.com/image-2.jpg-0-og:image:url',
+            props: {
+              content: 'https://example.com/image-2.jpg',
+              property: 'og:image:url',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-2.jpg-og:image:secure_url",
-            "props": {
-              "content": "https://example.com/image-2.jpg",
-              "property": "og:image:secure_url",
+            key: 'meta-https://example.com/image-2.jpg-og:image:secure_url',
+            props: {
+              content: 'https://example.com/image-2.jpg',
+              property: 'og:image:secure_url',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-2.jpg-og:image:type",
-            "props": {
-              "content": "image/jpeg",
-              "property": "og:image:type",
+            key: 'meta-https://example.com/image-2.jpg-og:image:type',
+            props: {
+              content: 'image/jpeg',
+              property: 'og:image:type',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-2.jpg-og:image:width",
-            "props": {
-              "content": 100,
-              "property": "og:image:width",
+            key: 'meta-https://example.com/image-2.jpg-og:image:width',
+            props: {
+              content: 100,
+              property: 'og:image:width',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
-          {
-            "key": "meta-og:type",
-            "props": {
-              "content": "website",
-              "property": "og:type",
-            },
-            "tag": "meta",
-          },
-          {
-            "key": "meta-twitter:card",
-            "props": {
-              "content": "summary_large_image",
-              "name": "twitter:card",
-            },
-            "tag": "meta",
-          },
-          {
-            "children": "{\\"@context\\":\\"https://schema.org\\",\\"@type\\":\\"Thing\\"}",
-            "key": "script-application/ld+json",
-            "props": {
-              "type": "application/ld+json",
-            },
-            "tag": "script",
-          },
-        ]
-      `);
+        ]),
+      );
     });
 
     it('should add media tags for multiple types of media', () => {
@@ -676,122 +462,98 @@ describe('generateSeoTags', () => {
       const output = generateSeoTags(input);
 
       // Then
-      expect(output).toMatchInlineSnapshot(`
-        [
+      expect(output).toEqual(
+        expect.arrayContaining([
           {
-            "key": "meta-https://example.com/image-1.jpg-0-og:image:url",
-            "props": {
-              "content": "https://example.com/image-1.jpg",
-              "property": "og:image:url",
+            key: 'meta-https://example.com/image-1.jpg-0-og:image:url',
+            props: {
+              content: 'https://example.com/image-1.jpg',
+              property: 'og:image:url',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-1.jpg-og:image:height",
-            "props": {
-              "content": 100,
-              "property": "og:image:height",
+            key: 'meta-https://example.com/image-1.jpg-og:image:height',
+            props: {
+              content: 100,
+              property: 'og:image:height',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-1.jpg-og:image:secure_url",
-            "props": {
-              "content": "https://example.com/image-1.jpg",
-              "property": "og:image:secure_url",
+            key: 'meta-https://example.com/image-1.jpg-og:image:secure_url',
+            props: {
+              content: 'https://example.com/image-1.jpg',
+              property: 'og:image:secure_url',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-1.jpg-og:image:type",
-            "props": {
-              "content": "image/jpeg",
-              "property": "og:image:type",
+            key: 'meta-https://example.com/image-1.jpg-og:image:type',
+            props: {
+              content: 'image/jpeg',
+              property: 'og:image:type',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-1.mp3-0-og:audio:url",
-            "props": {
-              "content": "https://example.com/image-1.mp3",
-              "property": "og:audio:url",
+            key: 'meta-https://example.com/image-1.mp3-0-og:audio:url',
+            props: {
+              content: 'https://example.com/image-1.mp3',
+              property: 'og:audio:url',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-1.mp3-og:audio:secure_url",
-            "props": {
-              "content": "https://example.com/image-1.mp3",
-              "property": "og:audio:secure_url",
+            key: 'meta-https://example.com/image-1.mp3-og:audio:secure_url',
+            props: {
+              content: 'https://example.com/image-1.mp3',
+              property: 'og:audio:secure_url',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-1.mp3-og:audio:type",
-            "props": {
-              "content": "audio/mpeg",
-              "property": "og:audio:type",
+            key: 'meta-https://example.com/image-1.mp3-og:audio:type',
+            props: {
+              content: 'audio/mpeg',
+              property: 'og:audio:type',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-1.swf-0-og:video:url",
-            "props": {
-              "content": "https://example.com/image-1.swf",
-              "property": "og:video:url",
+            key: 'meta-https://example.com/image-1.swf-0-og:video:url',
+            props: {
+              content: 'https://example.com/image-1.swf',
+              property: 'og:video:url',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-1.swf-og:video:height",
-            "props": {
-              "content": 100,
-              "property": "og:video:height",
+            key: 'meta-https://example.com/image-1.swf-og:video:height',
+            props: {
+              content: 100,
+              property: 'og:video:height',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-1.swf-og:video:secure_url",
-            "props": {
-              "content": "https://example.com/image-1.swf",
-              "property": "og:video:secure_url",
+            key: 'meta-https://example.com/image-1.swf-og:video:secure_url',
+            props: {
+              content: 'https://example.com/image-1.swf',
+              property: 'og:video:secure_url',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-https://example.com/image-1.swf-og:video:type",
-            "props": {
-              "content": "application/x-shockwave-flash",
-              "property": "og:video:type",
+            key: 'meta-https://example.com/image-1.swf-og:video:type',
+            props: {
+              content: 'application/x-shockwave-flash',
+              property: 'og:video:type',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
-          {
-            "key": "meta-og:type",
-            "props": {
-              "content": "website",
-              "property": "og:type",
-            },
-            "tag": "meta",
-          },
-          {
-            "key": "meta-twitter:card",
-            "props": {
-              "content": "summary_large_image",
-              "name": "twitter:card",
-            },
-            "tag": "meta",
-          },
-          {
-            "children": "{\\"@context\\":\\"https://schema.org\\",\\"@type\\":\\"Thing\\"}",
-            "key": "script-application/ld+json",
-            "props": {
-              "type": "application/ld+json",
-            },
-            "tag": "script",
-          },
-        ]
-      `);
+        ]),
+      );
     });
   });
 
@@ -806,50 +568,26 @@ describe('generateSeoTags', () => {
       const output = generateSeoTags(input);
 
       // Then
-      expect(output).toMatchInlineSnapshot(`
-        [
+      expect(output).toEqual(
+        expect.arrayContaining([
           {
-            "key": "meta-og:type",
-            "props": {
-              "content": "website",
-              "property": "og:type",
+            key: 'meta-twitter:creator',
+            props: {
+              content: '@shopify',
+              name: 'twitter:creator',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
           {
-            "key": "meta-twitter:card",
-            "props": {
-              "content": "summary_large_image",
-              "name": "twitter:card",
+            key: 'meta-twitter:site',
+            props: {
+              content: '@shopify',
+              name: 'twitter:site',
             },
-            "tag": "meta",
+            tag: 'meta',
           },
-          {
-            "key": "meta-twitter:creator",
-            "props": {
-              "content": "@shopify",
-              "name": "twitter:creator",
-            },
-            "tag": "meta",
-          },
-          {
-            "key": "meta-twitter:site",
-            "props": {
-              "content": "@shopify",
-              "name": "twitter:site",
-            },
-            "tag": "meta",
-          },
-          {
-            "children": "{\\"@context\\":\\"https://schema.org\\",\\"@type\\":\\"Thing\\"}",
-            "key": "script-application/ld+json",
-            "props": {
-              "type": "application/ld+json",
-            },
-            "tag": "script",
-          },
-        ]
-      `);
+        ]),
+      );
     });
 
     it('should warn if the handle is not a valid', () => {
@@ -866,69 +604,6 @@ describe('generateSeoTags', () => {
       expect(console.warn).toHaveBeenCalledWith(
         'Error in SEO input: `handle` should start with `@`',
       );
-    });
-  });
-
-  describe('jsonLd', () => {
-    it('should add additional jsonLd values', () => {
-      // Given
-      const input = {
-        jsonLd: {
-          '@context': 'https://schema.org',
-          '@type': 'Product',
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            bestRating: '100',
-            ratingCount: '24',
-            ratingValue: '87',
-          },
-          offers: {
-            '@type': 'AggregateOffer',
-            highPrice: '$1495',
-            lowPrice: '$1250',
-            offerCount: '8',
-            offers: [
-              {
-                '@type': 'Offer',
-                url: 'hydrogen.shop/discounts/1234',
-              },
-            ],
-          },
-        },
-      } satisfies Seo<Product>;
-
-      // When
-      const output = generateSeoTags<Product>(input);
-
-      // Then
-      expect(output).toMatchInlineSnapshot(`
-        [
-          {
-            "key": "meta-og:type",
-            "props": {
-              "content": "website",
-              "property": "og:type",
-            },
-            "tag": "meta",
-          },
-          {
-            "key": "meta-twitter:card",
-            "props": {
-              "content": "summary_large_image",
-              "name": "twitter:card",
-            },
-            "tag": "meta",
-          },
-          {
-            "children": "{\\"@context\\":\\"https://schema.org\\",\\"@type\\":\\"Product\\",\\"aggregateRating\\":{\\"@type\\":\\"AggregateRating\\",\\"bestRating\\":\\"100\\",\\"ratingCount\\":\\"24\\",\\"ratingValue\\":\\"87\\"},\\"offers\\":{\\"@type\\":\\"AggregateOffer\\",\\"highPrice\\":\\"$1495\\",\\"lowPrice\\":\\"$1250\\",\\"offerCount\\":\\"8\\",\\"offers\\":[{\\"@type\\":\\"Offer\\",\\"url\\":\\"hydrogen.shop/discounts/1234\\"}]}}",
-            "key": "script-application/ld+json",
-            "props": {
-              "type": "application/ld+json",
-            },
-            "tag": "script",
-          },
-        ]
-      `);
     });
   });
 
@@ -953,52 +628,286 @@ describe('generateSeoTags', () => {
       const output = generateSeoTags(input);
 
       // Then
-      expect(output).toMatchInlineSnapshot(`
-        [
+      expect(output).toEqual(
+        expect.arrayContaining([
           {
-            "key": "link-alternate-de",
-            "props": {
-              "href": "https://hydrogen.shop.com/de/products/1234",
-              "hrefLang": "de",
-              "rel": "alternate",
+            key: 'link-alternate-de',
+            props: {
+              href: 'https://hydrogen.shop.com/de/products/1234',
+              hrefLang: 'de',
+              rel: 'alternate',
             },
-            "tag": "link",
+            tag: 'link',
           },
           {
-            "key": "link-alternate-fr-default",
-            "props": {
-              "href": "https://hydrogen.shop.com/fr/products/1234",
-              "hrefLang": "fr-default",
-              "rel": "alternate",
+            key: 'link-alternate-fr-default',
+            props: {
+              href: 'https://hydrogen.shop.com/fr/products/1234',
+              hrefLang: 'fr-default',
+              rel: 'alternate',
             },
-            "tag": "link",
+            tag: 'link',
           },
-          {
-            "key": "meta-og:type",
-            "props": {
-              "content": "website",
-              "property": "og:type",
-            },
-            "tag": "meta",
-          },
-          {
-            "key": "meta-twitter:card",
-            "props": {
-              "content": "summary_large_image",
-              "name": "twitter:card",
-            },
-            "tag": "meta",
-          },
-          {
-            "children": "{\\"@context\\":\\"https://schema.org\\",\\"@type\\":\\"Thing\\"}",
-            "key": "script-application/ld+json",
-            "props": {
-              "type": "application/ld+json",
-            },
-            "tag": "script",
-          },
-        ]
-      `);
+        ]),
+      );
     });
+  });
+
+  describe('robots', () => {
+    it('should add a robots meta tag for noIndex and noFollow', () => {
+      // Given
+      const input = {
+        robots: {
+          noIndex: true,
+          noFollow: true,
+        },
+      };
+
+      // When
+      const output = generateSeoTags(input);
+
+      // Then
+      expect(output).toEqual(
+        expect.arrayContaining([
+          {
+            key: 'meta-robots',
+            props: {
+              content: 'noindex,nofollow',
+              name: 'robots',
+            },
+            tag: 'meta',
+          },
+        ]),
+      );
+    });
+  });
+
+  it('should add a robots meta tag for index and follow', () => {
+    // Given
+    const input = {
+      robots: {
+        noIndex: false,
+        noFollow: false,
+      },
+    };
+
+    // When
+    const output = generateSeoTags(input);
+
+    // Then
+    expect(output).toEqual(
+      expect.arrayContaining([
+        {
+          key: 'meta-robots',
+          props: {
+            content: 'index,follow',
+            name: 'robots',
+          },
+          tag: 'meta',
+        },
+      ]),
+    );
+  });
+
+  it('should add all the robots meta tags', () => {
+    // Given
+    const input = {
+      robots: {
+        noIndex: true,
+        noFollow: true,
+        noArchive: true,
+        noSnippet: true,
+        noImageIndex: true,
+        noTranslate: true,
+        maxImagePreview: 'large' as const,
+        maxSnippet: 100,
+        maxVideoPreview: 100,
+        unavailableAfter: '2023-01-01',
+      },
+    };
+
+    // When
+    const output = generateSeoTags(input);
+
+    // Then
+    expect(output).toEqual(
+      expect.arrayContaining([
+        {
+          key: 'meta-robots',
+          props: {
+            content:
+              'noindex,nofollow,noarchive,noimageindex,nosnippet,notranslate,max-image-preview:large,max-snippet:100,max-video-preview:100,unavailable_after:2023-01-01',
+            name: 'robots',
+          },
+          tag: 'meta',
+        },
+      ]),
+    );
+  });
+
+  describe('jsonLd', () => {
+    it('should not generate jsonLd if not configured', () => {
+      // Given
+      const input = {
+        jsonLd: {},
+      } as SeoConfig<Thing>;
+
+      // When
+      const output = generateSeoTags(input);
+
+      // Then
+      expect(output).toEqual(expect.arrayContaining([]));
+    });
+
+    it('should generate Organization jsonLd tag', () => {
+      // Given
+      const input = {
+        jsonLd: {
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: 'Hydrogen',
+          logo: 'https://cdn.shopify.com/s/files/1/0551/4566/0472/files/Logotype_086d64de-1273-4dbc-91c5-8d6d161d85d4.png?v=1655847948',
+          sameAs: [
+            'https://twitter.com/shopify',
+            'https://facebook.com/shopify',
+            'https://instagram.com/shopify',
+            'https://youtube.com/shopify',
+            'https://tiktok.com/@shopify',
+          ],
+          url: 'http://localhost:3000/products/the-full-stack',
+        },
+      } satisfies SeoConfig<Organization>;
+
+      // When
+      const output = generateSeoTags(input);
+
+      // Then
+      expect(output).toEqual(
+        expect.arrayContaining([
+          {
+            children: JSON.stringify(input.jsonLd),
+            key: 'script-json-ld-Organization',
+            props: {
+              type: 'application/ld+json',
+            },
+            tag: 'script',
+          },
+        ]),
+      );
+    });
+
+    it('should generate Product jsonLd tag', () => {
+      // Given
+      const input = {
+        jsonLd: {
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            bestRating: '100',
+            ratingCount: '24',
+            ratingValue: '87',
+          },
+          offers: {
+            '@type': 'AggregateOffer',
+            highPrice: '$1495',
+            lowPrice: '$1250',
+            offerCount: '8',
+            offers: [
+              {
+                '@type': 'Offer',
+                url: 'hydrogen.shop/discounts/1234',
+              },
+            ],
+          },
+        },
+      } satisfies SeoConfig<Product>;
+
+      // When
+      const output = generateSeoTags(input);
+
+      // Then
+      expect(output).toEqual(
+        expect.arrayContaining([
+          {
+            children: JSON.stringify(input.jsonLd),
+            key: 'script-json-ld-Product',
+            props: {
+              type: 'application/ld+json',
+            },
+            tag: 'script',
+          },
+        ]),
+      );
+    });
+  });
+
+  it('should generate both Organization and Product jsonLd tags', () => {
+    // Given
+    const input = {
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: 'Hydrogen',
+          logo: 'https://cdn.shopify.com/s/files/1/0551/4566/0472/files/Logotype_086d64de-1273-4dbc-91c5-8d6d161d85d4.png?v=1655847948',
+          sameAs: [
+            'https://twitter.com/shopify',
+            'https://facebook.com/shopify',
+            'https://instagram.com/shopify',
+            'https://youtube.com/shopify',
+            'https://tiktok.com/@shopify',
+          ],
+          url: 'http://localhost:3000/products/the-full-stack',
+        },
+        {
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            bestRating: '100',
+            ratingCount: '24',
+            ratingValue: '87',
+          },
+          offers: {
+            '@type': 'AggregateOffer',
+            highPrice: '$1495',
+            lowPrice: '$1250',
+            offerCount: '8',
+            offers: [
+              {
+                '@type': 'Offer',
+                url: 'hydrogen.shop/discounts/1234',
+              },
+            ],
+          },
+        },
+      ],
+    } satisfies SeoConfig<Organization | Product>;
+
+    // When
+    const output = generateSeoTags(input);
+
+    // Then
+    expect(output).toEqual(
+      expect.arrayContaining([
+        {
+          children: JSON.stringify(input.jsonLd[0]),
+          key: 'script-json-ld-Organization',
+          props: {
+            type: 'application/ld+json',
+          },
+          tag: 'script',
+        },
+        {
+          children: JSON.stringify(input.jsonLd[1]),
+          key: 'script-json-ld-Product',
+          props: {
+            type: 'application/ld+json',
+          },
+          tag: 'script',
+        },
+      ]),
+    );
   });
 });

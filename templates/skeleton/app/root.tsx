@@ -1,7 +1,6 @@
 import {
   defer,
   type LinksFunction,
-  type MetaFunction,
   type LoaderArgs,
 } from '@shopify/remix-oxygen';
 import {
@@ -32,13 +31,11 @@ export const links: LinksFunction = () => {
   ];
 };
 
-export const meta: MetaFunction = (data) => ({
-  charset: 'utf-8',
-  viewport: 'width=device-width,initial-scale=1',
-});
-
-export async function loader({context, request}: LoaderArgs) {
-  const cartId = await context.session.get('cartId');
+export async function loader({context}: LoaderArgs) {
+  const [customerAccessToken, cartId] = await Promise.all([
+    context.session.get('customerAccessToken'),
+    context.session.get('cartId'),
+  ]);
 
   const [cart, layout] = await Promise.all([
     cartId
@@ -62,6 +59,7 @@ export async function loader({context, request}: LoaderArgs) {
   ]);
 
   return defer({
+    isLoggedIn: Boolean(customerAccessToken),
     cart,
     layout,
   });
@@ -75,6 +73,8 @@ export default function App() {
   return (
     <html lang="en">
       <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
         <Meta />
         <Links />
       </head>

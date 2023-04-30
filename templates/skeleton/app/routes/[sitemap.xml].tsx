@@ -1,10 +1,11 @@
-import {flattenConnection} from '@shopify/hydrogen-react';
-import type {LoaderArgs} from '@shopify/remix-oxygen';
+import {flattenConnection} from '@shopify/hydrogen';
+import type {LoaderArgs, ErrorBoundaryComponent} from '@shopify/remix-oxygen';
+import {useCatch, useRouteError, isRouteErrorResponse} from '@remix-run/react';
 import {
   CollectionConnection,
   PageConnection,
   ProductConnection,
-} from '@shopify/hydrogen-react/storefront-api-types';
+} from '@shopify/hydrogen/storefront-api-types';
 
 const MAX_URLS = 250; // the google limit is 50K, however, SF API only allow querying for 250 resources each time
 
@@ -29,12 +30,12 @@ export async function loader({request, context: {storefront}}: LoaderArgs) {
   const data = await storefront.query<SitemapQueryData>(SITEMAP_QUERY, {
     variables: {
       urlLimits: MAX_URLS,
-      language: storefront.i18n?.language,
+      language: storefront.i18n.language,
     },
   });
 
   if (!data) {
-    throw new Response(null, {status: 404});
+    throw new Response('No data found', {status: 404});
   }
 
   return new Response(
@@ -50,6 +51,40 @@ export async function loader({request, context: {storefront}}: LoaderArgs) {
   );
 }
 
+export const ErrorBoundaryV1: ErrorBoundaryComponent = ({error}) => {
+  console.error(error);
+
+  return <div>There was an error.</div>;
+};
+
+export function CatchBoundary() {
+  const caught = useCatch();
+  console.error(caught);
+
+  return (
+    <div>
+      There was an error. Status: {caught.status}. Message:{' '}
+      {caught.data?.message}
+    </div>
+  );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+
+  if (isRouteErrorResponse(error)) {
+    console.error(error.status, error.statusText, error.data);
+    return <div>Route Error</div>;
+  } else {
+    console.error((error as Error).message);
+    return <div>Thrown Error</div>;
+  }
+}
+
+function xmlEncode(string: string) {
+  return string.replace(/[&<>'"]/g, (char) => `&#${char.charCodeAt(0)};`);
+}
+
 function shopSitemap({
   data,
   baseUrl,
@@ -60,25 +95,25 @@ function shopSitemap({
   const productsData = flattenConnection(data.products)
     .filter((product) => product.onlineStoreUrl)
     .map((product) => {
-      const url = `${baseUrl}/products/${product.handle}`;
+      const url = `${baseUrl}/products/${xmlEncode(product.handle)}`;
 
       const finalObject: ProductEntry = {
         url,
-        lastMod: product.updatedAt!,
+        lastMod: product.updatedAt,
         changeFreq: 'daily',
       };
 
       if (product.featuredImage?.url) {
         finalObject.image = {
-          url: product.featuredImage!.url,
+          url: xmlEncode(product.featuredImage.url),
         };
 
         if (product.title) {
-          finalObject.image.title = product.title;
+          finalObject.image.title = xmlEncode(product.title);
         }
 
-        if (product.featuredImage!.altText) {
-          finalObject.image.caption = product.featuredImage!.altText;
+        if (product.featuredImage.altText) {
+          finalObject.image.caption = xmlEncode(product.featuredImage.altText);
         }
       }
 
@@ -116,7 +151,7 @@ function shopSitemap({
       xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
       xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
     >
-      ${urlsDatas.map((url) => renderUrlTag(url!)).join('')}
+      ${urlsDatas.map((url) => renderUrlTag(url)).join('')}
     </urlset>`;
 }
 

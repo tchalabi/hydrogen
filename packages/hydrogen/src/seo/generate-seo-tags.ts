@@ -1,14 +1,18 @@
-import type {Maybe} from '@shopify/hydrogen-react/storefront-api-types';
-import type {WithContext, Thing} from 'schema-dts';
 import type {ComponentPropsWithoutRef} from 'react';
+import type {Maybe} from '@shopify/hydrogen-react/storefront-api-types';
+import type {Thing, WithContext} from 'schema-dts';
 
 const ERROR_PREFIX = 'Error in SEO input: ';
-// TODO: Refactor this into more reusible validators
-// or use a library like zod to do this if we decide
-// to use it in other places. @cartogram
-const schema = {
+
+// TODO: Refactor this into more reusable validators or use a library like zod to do this if we decide to use it in
+// other places. @cartogram
+export const schema = {
   title: {
-    validate: (value: unknown) => {
+    validate: <T>(value: Maybe<T>): NonNullable<T> => {
+      if (typeof value !== 'string') {
+        throw new Error(ERROR_PREFIX.concat('`title` should be a string'));
+      }
+
       if (typeof value === 'string' && value.length > 120) {
         throw new Error(
           ERROR_PREFIX.concat(
@@ -16,11 +20,18 @@ const schema = {
           ),
         );
       }
+
       return value;
     },
   },
   description: {
-    validate: (value: unknown) => {
+    validate: <T>(value: Maybe<T>): NonNullable<T> => {
+      if (typeof value !== 'string') {
+        throw new Error(
+          ERROR_PREFIX.concat('`description` should be a string'),
+        );
+      }
+
       if (typeof value === 'string' && value.length > 155) {
         throw new Error(
           ERROR_PREFIX.concat(
@@ -28,19 +39,29 @@ const schema = {
           ),
         );
       }
+
       return value;
     },
   },
   url: {
-    validate: (value: unknown) => {
+    validate: <T>(value: Maybe<T>): NonNullable<T> => {
+      if (typeof value !== 'string') {
+        throw new Error(ERROR_PREFIX.concat('`url` should be a string'));
+      }
+
       if (typeof value === 'string' && !value.startsWith('http')) {
         throw new Error(ERROR_PREFIX.concat('`url` should be a valid URL'));
       }
+
       return value;
     },
   },
   handle: {
-    validate: (value: unknown) => {
+    validate: <T>(value: Maybe<T>): NonNullable<T> => {
+      if (typeof value !== 'string') {
+        throw new Error(ERROR_PREFIX.concat('`handle` should be a string'));
+      }
+
       if (typeof value === 'string' && !value.startsWith('@')) {
         throw new Error(ERROR_PREFIX.concat('`handle` should start with `@`'));
       }
@@ -50,7 +71,7 @@ const schema = {
   },
 };
 
-export interface Seo<Schema extends Thing = Thing> {
+export interface SeoConfig<Schema extends Thing = Thing> {
   /**
    * The <title> HTML element defines the document's title that is shown in a browser's title bar or a page's tab. It
    * only contains text; tags within the element are ignored.
@@ -72,10 +93,10 @@ export interface Seo<Schema extends Thing = Thing> {
   titleTemplate?: Maybe<string> | null;
   /**
    * The media associated with the given page (images, videos, etc). If you pass a string, it will be used as the
-   * `og:image` meta tag. If you pass an object or an array of objects, that will be used to generate
-   * `og:<type of media>` meta tags. The `url` property should be the URL of the media. The `height` and `width`
-   * properties are optional and should be the height and width of the media. The `altText` property is optional and
-   * should be a description of the media.
+   * `og:image` meta tag. If you pass an object or an array of objects, that will be used to generate `og:<type of
+   * media>` meta tags. The `url` property should be the URL of the media. The `height` and `width` properties are
+   * optional and should be the height and width of the media. The `altText` property is optional and should be a
+   * description of the media.
    *
    * @example
    * ```js
@@ -178,7 +199,7 @@ export interface Seo<Schema extends Thing = Thing> {
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script
    *
    */
-  jsonLd?: WithContext<Schema>;
+  jsonLd?: WithContext<Schema> | WithContext<Schema>[];
   /**
    * The `alternates` property is used to specify the language and geographical targeting when you have multiple
    * versions of the same page in different languages. The `url` property tells search engines about these variations
@@ -204,32 +225,121 @@ export interface Seo<Schema extends Thing = Thing> {
    * @see https://support.google.com/webmasters/answer/189077?hl=en
    */
   alternates?: LanguageAlternate | LanguageAlternate[];
+  /**
+   * The `robots` property is used to specify the robots meta tag. This is used to tell search engines which pages
+   * should be indexed and which should not.
+   *
+   * @see https://developers.google.com/search/reference/robots_meta_tag
+   */
+  robots?: RobotsOptions;
+}
+
+/**
+ * @see https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag
+ */
+export interface RobotsOptions {
+  /**
+   * Set the maximum size of an image preview for this page in a search results Can be one of the following:
+   *
+   * - `none` - No image preview is to be shown.
+   * - `standard` - A default image preview may be shown.
+   * - `large` - A larger image preview, up to the width of the viewport, may be shown.
+   *
+   * If no value is specified a default image preview size is used.
+   */
+  maxImagePreview?: 'none' | 'standard' | 'large';
+  /**
+   * A number representing the maximum of amount characters to use as a textual snippet for a search result. This value
+   * can also be set to one of the following special values:
+   *
+   * - 0 - No snippet is to be shown. Equivalent to nosnippet.
+   * - 1 - The Search engine will choose the snippet length that it believes is most effective to help users discover
+   *   your content and direct users to your site
+   * - -1 - No limit on the number of characters that can be shown in the snippet.
+   */
+  maxSnippet?: number;
+  /**
+   * The maximum number of seconds for videos on this page to show in search results. This value can also be set to one
+   * of the following special values:
+   *
+   * - 0 - A static image may be used with the `maxImagePreview` setting.
+   * - 1 - There is no limit to the size of the video preview.
+   *
+   * This applies to all forms of search results (at Google: web search, Google Images, Google Videos, Discover,
+   * Assistant).
+   */
+  maxVideoPreview?: number;
+  /**
+   * Do not show a cached link in search results.
+   */
+  noArchive?: boolean;
+  /**
+   * Do not follow the links on this page.
+   *
+   * @see https://developers.google.com/search/docs/advanced/guidelines/qualify-outbound-links
+   */
+  noFollow?: boolean;
+  /**
+   * Do not index images on this page.
+   */
+  noImageIndex?: boolean;
+  /**
+   * Do not show this page, media, or resource in search results.
+   */
+  noIndex?: boolean;
+  /**
+   * Do not show a text snippet or video preview in the search results for this page.
+   */
+  noSnippet?: boolean;
+  /**
+   * Do not offer translation of this page in search results.
+   */
+  noTranslate?: boolean;
+  /**
+   * Do not show this page in search results after the specified date/time.
+   */
+  unavailableAfter?: string;
 }
 
 export interface LanguageAlternate {
-  // Language code for the alternate page. This is used to generate the hreflang meta tag property.
+  /**
+   * Language code for the alternate page. This is used to generate the hreflang meta tag property.
+   */
   language: string;
-  // Whether or not the alternate page is the default page. This will add the `x-default` attribution to the language
-  // code.
+  /**
+   * Whether the alternate page is the default page. This will add the `x-default` attribution to the language code.
+   */
   default?: boolean;
-  // The url of the alternate page. This is used to generate the hreflang meta tag property.
+  /**
+   * The url of the alternate page. This is used to generate the hreflang meta tag property.
+   */
   url: string;
 }
 
 export type SeoMedia = {
-  // Used to generate og:<type of media> meta tag
+  /**
+   * Used to generate og:<type of media> meta tag
+   */
   type: 'image' | 'video' | 'audio';
-  // The url value populates both url and secure_url and is used to infer the og:<type of media>:type meta tag.
+  /**
+   * The url value populates both url and secure_url and is used to infer the og:<type of media>:type meta tag.
+   */
   url: Maybe<string> | undefined;
-  // The height in pixels of the media. This is used to generate the og:<type of media>:height meta tag.
+  /**
+   * The height in pixels of the media. This is used to generate the og:<type of media>:height meta tag.
+   */
   height: Maybe<number> | undefined;
-  // The width in pixels of the media. This is used to generate the og:<type of media>:width meta tag/
+  /**
+   * The width in pixels of the media. This is used to generate the og:<type of media>:width meta tag.
+   */
   width: Maybe<number> | undefined;
-  // The alt text for the media. This is used to generate the og:<type of media>:alt meta tag.
+  /**
+   * The alt text for the media. This is used to generate the og:<type of media>:alt meta tag.
+   */
   altText: Maybe<string> | undefined;
 };
 
-export type TagKey = 'title' | 'base' | 'meta' | 'link' | 'script';
+type TagKey = 'title' | 'base' | 'meta' | 'link' | 'script';
 
 export interface CustomHeadTagObject {
   tag: TagKey;
@@ -245,242 +355,251 @@ export interface CustomHeadTagObject {
  */
 export function generateSeoTags<
   Schema extends Thing,
-  T extends Seo<Schema> = Seo<Schema>,
+  T extends SeoConfig<Schema> = SeoConfig<Schema>,
 >(seoInput: T): CustomHeadTagObject[] {
-  const output: CustomHeadTagObject[] = [];
-
-  // TODO: Type this with `Schema` when we can use `Schema` as a generic type argument.
-  let jsonLd: any = {
-    '@context': 'https://schema.org',
-    '@type': 'Thing',
-  };
+  const tagResults: CustomHeadTagObject[] = [];
 
   for (const seoKey of Object.keys(seoInput)) {
-    const values = ensureArray(seoInput[seoKey as keyof T]);
-    let content;
+    switch (seoKey) {
+      case 'title': {
+        const content = validate(schema.title, seoInput.title);
+        const title = renderTitle(seoInput?.titleTemplate, content);
 
-    if (!values) {
-      return [];
-    }
+        if (!title) {
+          break;
+        }
 
-    const tags = values.map((value) => {
-      const tagResults: CustomHeadTagObject[] = [];
+        tagResults.push(
+          generateTag('title', {title}),
+          generateTag('meta', {property: 'og:title', content: title}),
+          generateTag('meta', {name: 'twitter:title', content: title}),
+        );
 
-      if (!value) {
-        return tagResults;
+        break;
       }
 
-      switch (seoKey) {
-        case 'title': {
-          content = validate(schema.title, value) as string;
+      case 'description': {
+        const content = validate(schema.description, seoInput.description);
 
-          const title = renderTitle(seoInput?.titleTemplate, content);
-
-          tagResults.push(
-            generateTag('title', {title}),
-            generateTag('meta', {property: 'og:title', content: title}),
-            generateTag('meta', {name: 'twitter:title', content: title}),
-          );
-
-          jsonLd.name = content;
-
+        if (!content) {
           break;
         }
 
-        case 'description':
-          content = validate(schema.description, value) as string;
+        tagResults.push(
+          generateTag('meta', {
+            name: 'description',
+            content,
+          }),
+          generateTag('meta', {
+            property: 'og:description',
+            content,
+          }),
+          generateTag('meta', {
+            name: 'twitter:description',
+            content,
+          }),
+        );
 
-          tagResults.push(
-            generateTag('meta', {
-              name: 'description',
-              content,
-            }),
-            generateTag('meta', {
-              property: 'og:description',
-              content,
-            }),
-            generateTag('meta', {
-              name: 'twitter:description',
-              content,
-            }),
-          );
+        break;
+      }
 
-          jsonLd.description = content;
+      case 'url': {
+        const content = validate(schema.url, seoInput.url);
 
-          break;
-
-        case 'url':
-          content = validate(schema.url, value) as string;
-
-          tagResults.push(
-            generateTag('meta', {property: 'og:url', content}),
-            generateTag('link', {rel: 'canonical', href: content}),
-          );
-
-          jsonLd.url = content;
-          jsonLd['@type'] = inferSchemaType(content);
-
-          break;
-
-        case 'handle':
-          content = validate(schema.handle, value) as string;
-
-          tagResults.push(
-            generateTag('meta', {name: 'twitter:site', content}),
-            generateTag('meta', {name: 'twitter:creator', content}),
-          );
-
-          break;
-
-        case 'jsonLd':
-          jsonLd = {...jsonLd, ...value};
-
-          break;
-
-        case 'media': {
-          const values = ensureArray(value as unknown as Seo['media']);
-
-          for (const media of values) {
-            if (typeof media === 'string') {
-              tagResults.push(
-                generateTag('meta', {name: 'og:image', content: media}),
-              );
-
-              jsonLd.image = media;
-            }
-
-            if (media && typeof media === 'object') {
-              const type = media.type || 'image';
-
-              // Order matters here when adding multiple media tags @see https://ogp.me/#array
-              const normalizedMedia = media
-                ? {
-                    url: media?.url,
-                    secure_url: media?.url,
-                    type: inferMimeType(media.url),
-                    width: media?.width,
-                    height: media?.height,
-                    alt: media?.altText,
-                  }
-                : {};
-
-              for (const key of Object.keys(normalizedMedia)) {
-                if (normalizedMedia[key as keyof typeof normalizedMedia]) {
-                  content = normalizedMedia[
-                    key as keyof typeof normalizedMedia
-                  ] as string;
-
-                  tagResults.push(
-                    generateTag(
-                      'meta',
-                      {
-                        property: `og:${type}:${key}`,
-                        content,
-                      },
-                      normalizedMedia.url as string,
-                    ),
-                  );
-                }
-              }
-            }
-          }
+        if (!content) {
           break;
         }
 
-        case 'alternates': {
-          const alternates = ensureArray(value as unknown as Seo['alternates']);
+        tagResults.push(
+          generateTag('link', {
+            rel: 'canonical',
+            href: content,
+          }),
+          generateTag('meta', {
+            property: 'og:url',
+            content,
+          }),
+        );
 
-          for (const alternate of alternates) {
-            if (!alternate) {
-              continue;
-            }
+        break;
+      }
 
-            const {language, url, default: defaultLang} = alternate;
+      case 'handle': {
+        const content = validate(schema.handle, seoInput.handle);
 
-            const hrefLang = language
-              ? `${language}${defaultLang ? '-default' : ''}`
-              : undefined;
+        if (!content) {
+          break;
+        }
 
+        tagResults.push(
+          generateTag('meta', {name: 'twitter:site', content}),
+          generateTag('meta', {name: 'twitter:creator', content}),
+        );
+
+        break;
+      }
+
+      case 'media': {
+        let content;
+        const values = ensureArray(seoInput.media);
+
+        for (const media of values) {
+          if (typeof media === 'string') {
             tagResults.push(
-              generateTag('link', {
-                rel: 'alternate',
-                hrefLang,
-                href: url,
-              }),
+              generateTag('meta', {name: 'og:image', content: media}),
             );
           }
 
-          break;
+          if (media && typeof media === 'object') {
+            const type = media.type || 'image';
+
+            // Order matters here when adding multiple media tags @see https://ogp.me/#array
+            const normalizedMedia = media
+              ? {
+                  url: media?.url,
+                  secure_url: media?.url,
+                  type: inferMimeType(media.url),
+                  width: media?.width,
+                  height: media?.height,
+                  alt: media?.altText,
+                }
+              : {};
+
+            for (const key of Object.keys(normalizedMedia)) {
+              if (normalizedMedia[key as keyof typeof normalizedMedia]) {
+                content = normalizedMedia[
+                  key as keyof typeof normalizedMedia
+                ] as string;
+
+                tagResults.push(
+                  generateTag(
+                    'meta',
+                    {
+                      property: `og:${type}:${key}`,
+                      content,
+                    },
+                    normalizedMedia.url as string,
+                  ),
+                );
+              }
+            }
+          }
         }
+        break;
       }
 
-      return tagResults;
-    });
+      case 'jsonLd': {
+        const jsonLdBlocks = ensureArray(seoInput.jsonLd);
+        let index = 0;
+        for (const block of jsonLdBlocks) {
+          if (typeof block !== 'object') {
+            continue;
+          }
 
-    const entries = tags.flat();
+          const tag = generateTag(
+            'script',
+            {
+              type: 'application/ld+json',
+              children: JSON.stringify(block),
+            },
+            // @ts-expect-error
+            `json-ld-${block?.['@type'] || block?.name || index++}`,
+          );
 
-    output.push(
-      // @ts-expect-error untyped
-      entries.filter((value) => !!value),
-    );
+          tagResults.push(tag);
+        }
+
+        break;
+      }
+
+      case 'alternates': {
+        const alternates = ensureArray(seoInput.alternates);
+
+        for (const alternate of alternates) {
+          if (!alternate) {
+            continue;
+          }
+
+          const {language, url, default: defaultLang} = alternate;
+
+          const hrefLang = language
+            ? `${language}${defaultLang ? '-default' : ''}`
+            : undefined;
+
+          tagResults.push(
+            generateTag('link', {
+              rel: 'alternate',
+              hrefLang,
+              href: url,
+            }),
+          );
+        }
+
+        break;
+      }
+
+      case 'robots': {
+        if (!seoInput.robots) {
+          break;
+        }
+
+        const {
+          maxImagePreview,
+          maxSnippet,
+          maxVideoPreview,
+          noArchive,
+          noFollow,
+          noImageIndex,
+          noIndex,
+          noSnippet,
+          noTranslate,
+          unavailableAfter,
+        } = seoInput.robots;
+
+        const robotsParams = [
+          noArchive && 'noarchive',
+          noImageIndex && 'noimageindex',
+          noSnippet && 'nosnippet',
+          noTranslate && `notranslate`,
+          maxImagePreview && `max-image-preview:${maxImagePreview}`,
+          maxSnippet && `max-snippet:${maxSnippet}`,
+          maxVideoPreview && `max-video-preview:${maxVideoPreview}`,
+          unavailableAfter && `unavailable_after:${unavailableAfter}`,
+        ];
+
+        let robotsParam =
+          (noIndex ? 'noindex' : 'index') +
+          ',' +
+          (noFollow ? 'nofollow' : 'follow');
+
+        for (let param of robotsParams) {
+          if (param) {
+            robotsParam += `,${param}`;
+          }
+        }
+
+        tagResults.push(
+          generateTag('meta', {name: 'robots', content: robotsParam}),
+        );
+
+        break;
+      }
+
+      default: {
+        // TODO: We should be able to catch unaccounted for keys at compile time
+        // let exhaustiveCheck: never = seoKey;
+
+        break;
+      }
+    }
   }
 
-  const additionalTags = [
-    generateTag('meta', {property: 'og:type', content: 'website'}),
-    generateTag('meta', {
-      name: 'twitter:card',
-      content: 'summary_large_image',
-    }),
-  ];
-
-  return [...output, ...additionalTags]
-    .flat()
-    .sort((a, b) => a.key.localeCompare(b.key))
-    .concat(
-      // move ld+json to the end
-      generateTag('script', {
-        type: 'application/ld+json',
-        children: jsonLd as unknown as string,
-      }),
-    )
-    .flat();
+  return tagResults.flat().sort((a, b) => a.key.localeCompare(b.key));
 }
 
-type MetaTagProps =
-  | ComponentPropsWithoutRef<'title'>
-  | ComponentPropsWithoutRef<'base'>
-  | ComponentPropsWithoutRef<'meta'>
-  | ComponentPropsWithoutRef<'link'>
-  | ComponentPropsWithoutRef<'script'>;
-
-function generateTag(
-  tagName: 'script',
-  input: ComponentPropsWithoutRef<'script'>,
-  group?: string,
-): CustomHeadTagObject;
-function generateTag(
-  tagName: 'title',
-  input: ComponentPropsWithoutRef<'title'>,
-  group?: string,
-): CustomHeadTagObject;
-function generateTag(
-  tagName: 'base',
-  input: ComponentPropsWithoutRef<'base'>,
-  group?: string,
-): CustomHeadTagObject;
-function generateTag(
-  tagName: 'meta',
-  input: ComponentPropsWithoutRef<'meta'>,
-  group?: string,
-): CustomHeadTagObject;
-function generateTag(
-  tagName: 'link',
-  input: ComponentPropsWithoutRef<'link'>,
-  group?: string,
-): CustomHeadTagObject;
-function generateTag(
-  tagName: TagKey,
-  input: MetaTagProps,
+export function generateTag<T extends TagKey>(
+  tagName: T,
+  input: ComponentPropsWithoutRef<T>,
   group?: string,
 ): CustomHeadTagObject {
   const tag: CustomHeadTagObject = {tag: tagName, props: {}, key: ''};
@@ -495,9 +614,11 @@ function generateTag(
 
   // also move the input children to children and delete it
   if (tagName === 'script') {
-    tag.children = JSON.stringify(input.children);
-
+    tag.children = typeof input.children === 'string' ? input.children : '';
+    tag.key = generateKey(tag, group);
     delete input.children;
+    tag.props = input;
+    return tag;
   }
 
   // the rest goes on props
@@ -513,7 +634,13 @@ function generateTag(
   return tag;
 }
 
-function generateKey(tag: CustomHeadTagObject, group?: string) {
+//**
+// * Generate a unique key for a tag
+// * @param tag - a generated tag object
+// * @param group? - the group the tag belongs to
+// * @returns - a unique key to be used for react
+// */
+export function generateKey(tag: CustomHeadTagObject, group?: string) {
   const {tag: tagName, props} = tag;
 
   if (tagName === 'title') {
@@ -545,17 +672,25 @@ function generateKey(tag: CustomHeadTagObject, group?: string) {
     return key.replace(/\s+/g, '-');
   }
 
+  if (tagName === 'script') {
+    return `${tagName}-${group}`;
+  }
+
   return `${tagName}-${props.type}`;
 }
 
 function renderTitle<T extends CustomHeadTagObject['children']>(
   template?:
     | string
-    | ((title?: string) => string | undefined)
+    | ((title: string) => string | undefined)
     | undefined
     | null,
-  title?: T,
+  title?: T | null,
 ): string | undefined {
+  if (!title) {
+    return undefined;
+  }
+
   if (!template) {
     return title;
   }
@@ -570,31 +705,22 @@ function renderTitle<T extends CustomHeadTagObject['children']>(
 function inferMimeType(url: Maybe<string> | undefined) {
   const ext = url && url.split('.').pop();
 
-  if (ext === 'svg') {
-    return 'image/svg+xml';
+  switch (ext) {
+    case 'svg':
+      return 'image/svg+xml';
+    case 'png':
+      return 'image/png';
+    case 'gif':
+      return 'image/gif';
+    case 'swf':
+      return 'application/x-shockwave-flash';
+    case 'mp3':
+      return 'audio/mpeg';
+    case 'jpg':
+    case 'jpeg':
+    default:
+      return 'image/jpeg';
   }
-
-  if (ext === 'png') {
-    return 'image/png';
-  }
-
-  if (ext === 'jpg' || ext === 'jpeg') {
-    return 'image/jpeg';
-  }
-
-  if (ext === 'gif') {
-    return 'image/gif';
-  }
-
-  if (ext === 'swf') {
-    return 'application/x-shockwave-flash';
-  }
-
-  if (ext === 'mp3') {
-    return 'audio/mpeg';
-  }
-
-  return 'image/jpeg';
 }
 
 export type SchemaType =
@@ -606,80 +732,18 @@ export type SchemaType =
   | 'BlogPosting'
   | 'Thing';
 
-function inferSchemaType(url: Maybe<string> | undefined): SchemaType {
-  const defaultType = 'Thing';
-
-  if (!url) {
-    return defaultType;
-  }
-
-  const routes: {type: SchemaType; pattern: RegExp | string}[] = [
-    {
-      type: 'WebSite',
-      pattern: '^/$',
-    },
-    {
-      type: 'Product',
-      pattern: '/products/.*',
-    },
-    {
-      type: 'ItemList',
-      pattern: /\/collections$/,
-    },
-    {
-      type: 'ItemList',
-      pattern: /\/collections\/([^/]+)/,
-    },
-    {
-      type: 'WebPage',
-      pattern: /\/pages\/([^/]+)/,
-    },
-    {
-      type: 'WebSite',
-      pattern: /\/blogs\/([^/]+)/,
-    },
-    {
-      type: 'BlogPosting',
-      pattern: /\/blogs\/([^/]+)\/([^/]+)/,
-    },
-    {
-      type: 'Organization',
-      pattern: '/policies',
-    },
-    {
-      type: 'Organization',
-      pattern: /\/policies\/([^/]+)/,
-    },
-  ];
-
-  const typeMatches = routes.filter((route) => {
-    const {pattern} = route;
-    const regex = new RegExp(pattern);
-    return regex.test(url);
-  });
-
-  return typeMatches.length > 0
-    ? typeMatches[typeMatches.length - 1].type
-    : defaultType;
-}
-
 function ensureArray<T>(value: T | T[]): T[] {
   return Array.isArray(value) ? value : [value];
 }
 
-function validate(
-  schema: {validate: (data: unknown) => unknown},
-  data: unknown,
-) {
+function validate<T>(
+  schema: {validate: <T>(data: T) => NonNullable<T>},
+  data: T,
+): T {
   try {
-    return schema.validate(data);
+    return schema.validate<T>(data);
   } catch (error: unknown) {
-    const message = (error as Error).message;
-
-    // TODO: Discuss consistency of logging
-    // run time warnings/helpers
-    console.warn(message);
-
+    console.warn((error as Error).message);
     return data;
   }
 }

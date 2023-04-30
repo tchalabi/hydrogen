@@ -8,6 +8,7 @@ import {
   useDrawer,
   Text,
   Input,
+  IconLogin,
   IconAccount,
   IconBag,
   IconSearch,
@@ -225,18 +226,16 @@ function MobileHeader({
         className="flex items-center self-stretch leading-[3rem] md:leading-[4rem] justify-center flex-grow w-full h-full"
         to="/"
       >
-        <Heading className="font-bold text-center" as={isHome ? 'h1' : 'h2'}>
+        <Heading
+          className="font-bold text-center leading-none"
+          as={isHome ? 'h1' : 'h2'}
+        >
           {title}
         </Heading>
       </Link>
 
       <div className="flex items-center justify-end w-full gap-4">
-        <Link
-          to="/account"
-          className="relative flex items-center justify-center w-8 h-8"
-        >
-          <IconAccount />
-        </Link>
+        <AccountLink className="relative flex items-center justify-center w-8 h-8" />
         <CartCount isHome={isHome} openCart={openCart} />
       </div>
     </header>
@@ -312,15 +311,24 @@ function DesktopHeader({
             <IconSearch />
           </button>
         </Form>
-        <Link
-          to="/account"
-          className="relative flex items-center justify-center w-8 h-8 focus:ring-primary/5"
-        >
-          <IconAccount />
-        </Link>
+        <AccountLink className="relative flex items-center justify-center w-8 h-8 focus:ring-primary/5" />
         <CartCount isHome={isHome} openCart={openCart} />
       </div>
     </header>
+  );
+}
+
+function AccountLink({className}: {className?: string}) {
+  const [root] = useMatches();
+  const isLoggedIn = root.data?.isLoggedIn;
+  return isLoggedIn ? (
+    <Link to="/account" className={className}>
+      <IconAccount />
+    </Link>
+  ) : (
+    <Link to="/account/login" className={className}>
+      <IconLogin />
+    </Link>
   );
 }
 

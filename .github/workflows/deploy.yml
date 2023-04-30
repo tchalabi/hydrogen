@@ -7,7 +7,7 @@
 
 name: Oxygen Deployment
 
-on: [push, workflow_dispatch]
+on: [pull_request, workflow_dispatch]
 
 jobs:
   deploy:
@@ -22,23 +22,25 @@ jobs:
       - name: ⎔ Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version-file: '.nvmrc'
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
 
       - name: 📥 Install dependencies
         run: npm ci
 
-      - name: 💾 Turbo cache
-        id: turbo-cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            node_modules/.cache/turbo
-            **/.turbo
-          key: turbo-${{ github.job }}-${{ github.ref_name }}-${{ github.sha }}
-          restore-keys: |
-            turbo-${{ github.job }}-${{ github.ref_name }}-
+      # Enabling the turbo cache causes deployments to fail intermittently.
+      # The build step fails with dependency issues. More investigation needed.
+      # - name: 💾 Turbo cache
+      #   id: turbo-cache
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: |
+      #       node_modules/.cache/turbo
+      #       **/.turbo
+      #     key: turbo-${{ github.job }}-${{ github.ref_name }}-${{ github.sha }}
+      #     restore-keys: |
+      #       turbo-${{ github.job }}-${{ github.ref_name }}-
 
       - name: 📦 Build packages
         run: |

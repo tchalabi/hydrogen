@@ -4,10 +4,22 @@ import {MediaFile} from '@shopify/hydrogen';
 import type {
   MediaImage,
   Media,
+  Metafield,
   Video as MediaVideo,
 } from '@shopify/hydrogen/storefront-api-types';
 import {Heading, Text, Link} from '~/components';
-import type {CollectionHero} from '~/routes/($lang)/index';
+
+export interface CollectionHero {
+  byline: Metafield;
+  cta: Metafield;
+  handle: string;
+  heading: Metafield;
+  height?: 'full';
+  loading?: 'eager' | 'lazy';
+  spread: Metafield;
+  spreadSecondary: Metafield;
+  top?: boolean;
+}
 
 /**
  * Hero component that renders metafields attached to collection resources
@@ -62,6 +74,7 @@ export function Hero({
                 widths={[450, 700]}
                 width={375}
                 data={spreadSecondary.reference as Media}
+                loading={loading}
               />
             </div>
           )}
@@ -87,6 +100,7 @@ export function Hero({
 interface SpreadMediaProps {
   data: Media | MediaImage | MediaVideo;
   loading?: HTMLImageElement['loading'];
+  decoding?: HTMLImageElement['decoding'];
   scale?: 2 | 3;
   sizes: string;
   width: number;
@@ -96,6 +110,7 @@ interface SpreadMediaProps {
 function SpreadMedia({
   data,
   loading,
+  decoding,
   scale,
   sizes,
   width,
@@ -117,6 +132,7 @@ function SpreadMedia({
         },
         image: {
           loading,
+          decoding,
           loaderOptions: {scale, crop: 'center'},
           widths,
           sizes,

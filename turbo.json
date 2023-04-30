@@ -21,12 +21,17 @@
       "outputs": [],
       "dependsOn": ["build"]
     },
+    "//#format": {},
+    "//#format:check": {},
     "test": {},
     "test:watch": {
       "cache": false
     },
     "@shopify/create-hydrogen#build": {
       "dependsOn": ["@shopify/cli-hydrogen#build"]
+    },
+    "@shopify/hydrogen#build": {
+      "dependsOn": ["@shopify/hydrogen-react#build"]
     },
     "demo-store#build": {
       "dependsOn": [
